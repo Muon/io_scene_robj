@@ -1,0 +1,2 @@
+Blender 2.67 export script for Resequence ROBJ. Just put __init__.py in a
+directory named io_scene_robj in your personal Blender scripts directory.
