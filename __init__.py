@@ -80,10 +80,13 @@ class ExportROBJ(bpy.types.Operator, ExportHelper):
                 else:
                     raise RuntimeError("Too many UV coords on %s" % ob)
 
-        vert_data = array('f')
         # Process the positions and normals of the vertices of every frame.
+        vert_data = array('f')
         for frame_idx in range(scene.frame_start, scene.frame_end + 1):
             scene.frame_set(frame_idx)
+            # Buffers, to be recombined into vert_data at end of iteration.
+            normal_data = array('f')
+            position_data = array('f')
             for ob in objects:
                 mesh = ob.to_mesh(scene, True, 'PREVIEW', calc_tessface=True)
                 matrix_world = ob.matrix_world
@@ -109,15 +112,17 @@ class ExportROBJ(bpy.types.Operator, ExportHelper):
                     if face.use_smooth:
                         # Use vertex normals if face smoothing is on (fancier).
                         for i in face_vertices:
-                            vert_data.extend(matrix_world * mesh.vertices[i].normal)
+                            normal_data.extend(matrix_world * mesh.vertices[i].normal)
                     else:
                         # Use face normals otherwise.
                         for i in face_vertices:
-                            vert_data.extend(matrix_world * face.normal)
+                            normal_data.extend(matrix_world * face.normal)
 
                     # Process vertex positions.
                     for i in face_vertices:
-                        vert_data.extend(transformed[i])
+                        position_data.extend(transformed[i])
+            vert_data += normal_data
+            vert_data += position_data
 
         print("Processed %d meshes" % len(objects))
         print("Total %d UV coords and %d vertices" % (len(uv_data) / 3,
